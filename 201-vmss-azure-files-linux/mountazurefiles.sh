@@ -10,19 +10,31 @@
 # For more details refer to https://azure.microsoft.com/en-us/documentation/articles/storage-how-to-use-files-linux/
 
 # update package lists
-apt-get -y update
+sudo apt-get -y update
 
 # install cifs-utils and mount file share
-apt-get install cifs-utils
+sudo apt-get install cifs-utils
 mkdir -p $4
-mount -t cifs //$1.file.core.windows.net/$3 $4 -o vers=3.0,username=$1,password=$2,dir_mode=0777,file_mode=0666
+#sudo mount -t cifs //$1.file.core.windows.net/$3 $4 -o vers=3.0,username=$1,password=$2,dir_mode=0777,file_mode=0666
+sudo mkdir $4
+if [ ! -d "/etc/smbcredentials" ]; then
+sudo mkdir /etc/smbcredentials
+fi
+if [ ! -f "/etc/smbcredentials/vimstoradrplmrkt001.cred" ]; then
+    sudo bash -c 'echo "username=$5" >> /etc/smbcredentials/$5.cred'
+    sudo bash -c 'echo "password=$2" >> /etc/smbcredentials/$5.cred'
+fi
+sudo chmod 600 /etc/smbcredentials/$5.cred
 
-# create a symlink from /mountpath/xxx to ~username/xxx
+sudo bash -c 'echo "//$1.file.core.windows.net/drupalvmfileshare $4 cifs nofail,vers=3.0,credentials=/etc/smbcredentials/$1.cred,dir_mode=0777,file_mode=0777,serverino" >> /etc/fstab'
+sudo mount -t cifs //$1.file.core.windows.net/drupalvmfileshare $4 -o vers=3.0,credentials=/etc/smbcredentials/$1.cred,dir_mode=0777,file_mode=0777,serverino
+
+# create a symlink from /mountpath/xxx to ~/username/xxx
 linkpoint=`echo $4 | sed 's/.*\///'`
-eval ln -s $4 ~$5/$linkpoint
+eval ln -s $4 ~/$5/$linkpoint
 
 # create marker files for testing
-echo "hello from $HOSTNAME" > $4/$HOSTNAME.txt
+echo "hello from $HOSTNAME" > $5/$HOSTNAME.txt
 
 
 
